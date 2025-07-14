@@ -1,0 +1,173 @@
+body {
+  font-family: 'KaiTi', 'STKaiti', 'Microsoft YaHei', sans-serif;
+  background-color: #f0f8ff;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* 改为flex-start以适应长页面 */
+  min-height: 100vh;
+  margin: 0;
+  padding: 2rem 0;
+}
+
+.container {
+  width: 800px;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+h1 {
+  color: #2c3e50;
+  font-size: 2.5em;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.game-area-wrapper {
+  position: relative;
+  width: 600px;
+  height: 400px;
+  margin: 0 auto;
+}
+
+canvas {
+  background-color: #e8f5e9;
+  border: 2px solid #a5d6a7;
+  border-radius: 8px;
+}
+
+.game-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  z-index: 10;
+}
+
+.game-overlay h2 {
+  font-size: 2em;
+  margin-bottom: 20px;
+}
+
+.game-overlay p {
+  font-size: 1.1em;
+  line-height: 1.6;
+}
+
+.game-overlay button {
+  padding: 12px 25px;
+  font-size: 1.2em;
+  font-family: inherit;
+  cursor: pointer;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+  margin-top: 20px;
+}
+
+.game-overlay button:hover {
+  background-color: #45a049;
+}
+
+.info-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 20px;
+  gap: 20px;
+  text-align: left;
+  width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.api-key-section, .collected-chars-section {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  flex: 1;
+  min-height: 110px;
+}
+
+.api-key-section label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.api-key-section input {
+  width: calc(100% - 22px);
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-family: inherit;
+}
+
+.collected-chars-section h3 {
+  margin-top: 0;
+}
+
+#collected-chars-display {
+  font-size: 1.5em;
+  color: #d32f2f;
+  letter-spacing: 0.2em;
+  min-height: 30px;
+  font-weight: bold;
+  word-break: break-all;
+}
+
+.poem-section {
+  margin-top: 25px;
+  padding: 20px;
+  background-color: #fffbe9;
+  border: 1px dashed #ffe57f;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.poem-section h3 {
+  margin-top: 0;
+  color: #5d4037;
+}
+
+#poem-output, .poem-error {
+  font-size: 1.2em;
+  line-height: 1.8;
+  color: #3e2723;
+  white-space: pre-wrap;
+  text-align: center;
+  font-family: 'KaiTi', 'STKaiti', serif;
+}
+
+.poem-error {
+  color: #c62828;
+  font-size: 1em;
+}
+
+.loader {
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #3498db;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin: 10px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

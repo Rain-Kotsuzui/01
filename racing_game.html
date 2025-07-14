@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>赛车游戏</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #333;
+        }
+
+        #gameCanvas {
+            display: block;
+            background-color: #555;
+        }
+
+        #speedDisplay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-family: Arial;
+            font-size: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="speedDisplay">速度: 0</div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const speedDisplay = document.getElementById('speedDisplay');
+
+        // 设置画布大小为窗口大小
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // 游戏参数
+        // 游戏参数
+        const roadWidth = canvas.width * 0.6;
+        const roadLeft = (canvas.width - roadWidth) / 2;
+        const roadRight = roadLeft + roadWidth;
+        const markerSpacing = 50; // 参照物间距
+        let markers = []; // 道路参照物数组
+
+        // 游戏状态
+        let gameState = {
+            health: 100, // 初始血量
+            maxHealth: 100, // 最大血量
+            score: 0, // 得分
+            distance: 0 // 新增里程计数
+        };
+
+        // 物品参数
+        const itemTypes = {
+            GOOD: { color: 'green', value: 10 },
+            BAD: { color: 'red', value: -20 }
+        };
+        const itemSpawnRate = 1; // 物品生成率
+        let items = []; // 物品数组
+
+        let car = {
+            x: canvas.width / 2,
+            y: canvas.height - 100,
+            width: 48, // 长度减少40%（80*0.6）
+            height: 80, // 宽度增加一倍（40*2）
+            verticalOffset: 0, // 垂直偏移量
+            verticalSpeed: 5, // 垂直移动速度
+
+            slowVerticalSpeed: 1, // 垂直移动速度
+            speed: 0,
+            maxSpeed: 6.4, // 减少20%
+            minSpeed: 2,
+            acceleration: 0.0196, // 减少30%
+            deceleration: 0.05,
+            steering: 0,
+            steeringSpeed: 5,
+            slowSteeringSpeed: 1,
+            color: '#3498db', // 添加蓝色外观
+            borderColor: '#2980b9' // 添加边框颜色
+        };
+
+        // 键盘控制
+        const keys = {};
+        window.addEventListener('keydown', (e) => keys[e.key] = true);
+        window.addEventListener('keyup', (e) => keys[e.key] = false);
+
+        // 游戏循环
+        let gameActive = true;
+
+        function gameLoop() {
+            if (gameActive) {
+                update();
+                render();
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function update() {
+            // 自动加速
+            if (car.speed < car.maxSpeed) {
+                car.speed += car.acceleration;
+            }
+
+            // 更新道路参照物
+            if (markers.length === 0 || markers[markers.length - 1].y > markerSpacing) {
+                markers.push({ y: 0 });
+                gameState.distance += car.speed * 0.1; // 根据速度增加里程
+
+                // 随机生成物品
+                if (Math.random() < itemSpawnRate) {
+                    const type = Math.random() > 0.1 ? 'GOOD' : 'BAD'; // 增加BAD物品概率
+                    items.push({
+                        x: roadLeft + Math.sin(Date.now()/1000) * roadWidth*0.8 / 2 + roadWidth / 2,
+                        y: 0,
+                        width: type === 'BAD' ? 40 : 20,
+                        height: 20,
+                        type: type
+                    });
+                }
+            }
+
+            // 移动参照物（模拟车辆前进）
+            for (let i = 0; i < markers.length; i++) {
+                markers[i].y += car.speed;
+            }
+
+
+
+            // 移除超出屏幕的参照物和物品
+            markers = markers.filter(marker => marker.y < canvas.height);
+            items = items.filter(item => item.y < canvas.height);
+
+            // 检测物品碰撞
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (
+                    car.x < item.x + item.width &&
+                    car.x + car.width > item.x &&
+                    car.y + car.verticalOffset < item.y + item.height &&
+                    car.y + car.verticalOffset + car.height > item.y
+                ) {
+                    gameState.health = Math.max(0, Math.min(
+                        gameState.maxHealth,
+                        gameState.health + itemTypes[item.type].value
+                    ));
+                    gameState.score += itemTypes[item.type].value > 0 ? 10 : 0;
+
+                    // 碰到惩罚物减速
+                    if (item.type === 'BAD') {
+                        car.speed = Math.max(car.minSpeed, car.speed * 0.2); // 直接降为原速度的20%
+                        gameState.health -= 20; // 减少血量
+
+                        if (gameState.health <= 0) {
+                            alert('游戏结束！');
+                            window.location.reload(); // 重新加载页面
+                        }
+                    }
+
+                    items.splice(i, 1);
+                    i--;
+                }
+            }
+
+            // 键盘控制转向和视角
+            car.steering = 0;
+
+            if (keys['Shift'] && keys['ArrowLeft']) car.steering = - car.slowSteeringSpeed;
+            else if (keys['ArrowLeft']) car.steering = -car.steeringSpeed;
+
+            if (keys['Shift'] && keys['ArrowRight']) car.steering = car.slowSteeringSpeed;
+            else if (keys['ArrowRight']) car.steering = car.steeringSpeed;
+
+            if (keys['Shift'] && keys['ArrowUp']) car.verticalOffset = -car.slowVerticalSpeed;
+            else if (keys['ArrowUp']) car.verticalOffset -= car.verticalSpeed;
+
+            if (keys['Shift'] && keys['ArrowDown']) car.verticalOffset += car.slowVerticalSpeed;
+            else if (keys['ArrowDown']) car.verticalOffset += car.verticalSpeed;
+
+
+            // 更新位置
+            car.x += car.steering;
+
+            // 边界检查
+            if (car.x < roadLeft || car.x + car.width > roadRight) {
+                // 脱离道路减速
+                if (car.speed > car.minSpeed) {
+                    car.speed -= car.deceleration;
+                }
+            }
+
+            // 限制车辆不超出画布
+            if (car.x < 0) car.x = 0;
+            if (car.x + car.width > canvas.width) car.x = canvas.width - car.width;
+
+            // 更新速度显示
+            speedDisplay.textContent = `速度: ${car.speed.toFixed(1)} 里程: ${gameState.distance.toFixed(1)}`;
+        }
+
+        function render() {
+            // 清空画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制道路
+            ctx.fillStyle = '#777';
+            ctx.fillRect(roadLeft, 0, roadWidth, canvas.height);
+
+            // 绘制道路标记
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+
+            // 绘制道路参照物
+            ctx.fillStyle = 'yellow';
+            for (let i = 0; i < markers.length; i++) {
+                const marker = markers[i];
+                ctx.beginPath();
+                ctx.arc(roadLeft + 20, marker.y, 5, 0, Math.PI * 2);
+                ctx.arc(roadRight - 20, marker.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 绘制物品
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                ctx.fillStyle = itemTypes[item.type].color;
+                ctx.fillRect(item.x, item.y, item.width, item.height);
+                items[i].y += car.speed;
+            }
+
+            // 绘制血量条
+            const healthBarWidth = 200;
+            const healthPercentage = gameState.health / gameState.maxHealth;
+            ctx.fillStyle = 'red';
+            ctx.fillRect(20, 40, healthBarWidth, 20);
+            ctx.fillStyle = 'green';
+            ctx.fillRect(20, 40, healthBarWidth * healthPercentage, 20);
+            ctx.strokeStyle = 'black';
+            ctx.strokeRect(20, 40, healthBarWidth, 20);
+
+            // 绘制分数
+            ctx.fillStyle = 'white';
+            ctx.font = '20px Arial';
+            ctx.fillText(`分数: ${gameState.score}`, 20, 90);
+
+            // 绘制车辆
+            ctx.fillStyle = 'red';
+            ctx.fillRect(car.x, car.y + car.verticalOffset, car.width, car.height);
+
+            // 游戏结束检测
+            if (gameState.health <= 0) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'white';
+                ctx.font = '48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('游戏结束', canvas.width / 2, canvas.height / 2);
+                ctx.font = '24px Arial';
+                ctx.fillText(`最终分数: ${gameState.score}`, canvas.width / 2, canvas.height / 2 + 40);
+                return;
+            }
+        }
+
+        // 窗口大小改变时调整画布
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            // 更新道路参数
+            roadWidth = canvas.width * 0.6;
+            roadLeft = (canvas.width - roadWidth) / 2;
+            roadRight = roadLeft + roadWidth;
+
+            // 重置车辆位置
+            car.x = canvas.width / 2;
+            car.y = canvas.height - 100;
+        });
+
+        // 开始游戏
+        gameLoop();
+    </script>
+</body>
+
+</html>
