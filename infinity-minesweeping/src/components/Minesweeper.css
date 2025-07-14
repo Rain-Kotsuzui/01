@@ -199,7 +199,6 @@ html,
     -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid rgba(236, 240, 241, 0.1);
     pointer-events: all;
-    /* 整个顶栏都可以交互 */
 }
 
 .ui-overlay h1,
@@ -293,3 +292,44 @@ html,
     background-color: #2980b9;
     transform: translateY(-2px);
 }
+
+/* --- 7. 页面底栏 --- */
+.page-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 10px 0;
+    
+    /* 使用与顶栏一致的磨砂玻璃效果 */
+    background: rgba(44, 62, 80, 0.5); 
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  
+    /* 关键：让内部文本居中 */
+    text-align: center;
+    z-index: 10; /* 确保它在游戏网格之上 */
+  
+    /* 关键：让鼠标事件穿透底栏，这样不会挡住下方的格子 */
+    pointer-events: none; 
+  }
+  
+  .page-footer p {
+    margin: 0;
+    color: #bdc3c7; /* 柔和的灰色文字 */
+    font-size: 0.9em;
+  
+    /* 关键：让文字和链接可以被再次点击 */
+    pointer-events: all; 
+  }
+  
+  .page-footer a {
+    color: #ecf0f1; /* 让链接更亮一些 */
+    font-weight: bold;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  
+  .page-footer a:hover {
+    color: #3498db; /* 鼠标悬停时高亮 */
+  }

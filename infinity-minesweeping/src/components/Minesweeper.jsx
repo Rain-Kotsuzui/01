@@ -56,7 +56,7 @@ const Minesweeper = () => {
     // 统一的动画循环，处理所有缓动效果
     const animate = useCallback(() => {
         let isAnimating = false;
-        
+
         // 1. 处理缩放缓动
         const currentZoom = viewportRef.current.zoom;
         const targetZoom = targetZoomRef.current;
@@ -92,7 +92,7 @@ const Minesweeper = () => {
                 viewportRef.current.y = targetY;
             }
         }
-        
+
         // 3. 更新DOM并决定是否继续动画
         if (isAnimating) {
             updateTransform();
@@ -102,7 +102,7 @@ const Minesweeper = () => {
             setViewVersion(v => v + 1);
         }
     }, [updateTransform]);
-    
+
     // 启动动画的统一入口
     const startAnimation = () => {
         if (!animationFrameRef.current) {
@@ -121,13 +121,13 @@ const Minesweeper = () => {
 
         const mouseXWorld = (clientX - width / 2 + x * zoom) / zoom;
         const mouseYWorld = (clientY - height / 2 + y * zoom) / zoom;
-        
+
         const newTargetZoom = targetZoomRef.current * (1 - deltaY * ZOOM_SENSITIVITY);
         targetZoomRef.current = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newTargetZoom));
-        
+
         viewportRef.current.x = mouseXWorld - (clientX - width / 2) / targetZoomRef.current;
         viewportRef.current.y = mouseYWorld - (clientY - height / 2) / targetZoomRef.current;
-        
+
         targetPositionRef.current.x = viewportRef.current.x;
         targetPositionRef.current.y = viewportRef.current.y;
 
@@ -147,12 +147,12 @@ const Minesweeper = () => {
         // 只在中键按下时开始平移
         if (e.button === 1) {
             e.preventDefault(); // 阻止浏览器默认的中键滚动行为
-            
+
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
                 animationFrameRef.current = null;
             }
-            
+
             targetPositionRef.current.x = viewportRef.current.x;
             targetPositionRef.current.y = viewportRef.current.y;
 
@@ -167,25 +167,25 @@ const Minesweeper = () => {
     // 移动鼠标 (无需修改，因为它依赖 isPanningRef)
     const handleMouseMove = (e) => {
         if (!isPanningRef.current) return;
-        
+
         const { zoom } = viewportRef.current;
         const dx = e.clientX - panStartRef.current.x;
         const dy = e.clientY - panStartRef.current.y;
-        
+
         const moveX = dx / zoom;
         const moveY = dy / zoom;
 
         viewportRef.current.x -= moveX;
         viewportRef.current.y -= moveY;
-        
+
         targetPositionRef.current.x = viewportRef.current.x;
         targetPositionRef.current.y = viewportRef.current.y;
-        
-        panVelocityRef.current = { x: -moveX, y: -moveY }; 
-        
+
+        panVelocityRef.current = { x: -moveX, y: -moveY };
+
         panStartRef.current = { x: e.clientX, y: e.clientY };
         lastPanTimeRef.current = performance.now();
-        
+
         updateTransform();
     };
 
@@ -203,7 +203,7 @@ const Minesweeper = () => {
     // 处理点击格子
     const handleCellClick = (e, x, y) => {
         e.stopPropagation();
-        
+
         // 这个检查仍然有用，可以防止用户在按下左键后意外移动鼠标导致的误点
         const { x: startX, y: startY } = clickStartPositionRef.current;
         if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) {
@@ -299,7 +299,7 @@ const Minesweeper = () => {
         const cells = [];
         const { x, y, zoom } = viewportRef.current;
         const { width, height } = windowSize;
-        
+
         const worldLeft = x - width / 2 / zoom;
         const worldRight = x + width / 2 / zoom;
         const worldTop = y - height / 2 / zoom;
@@ -342,15 +342,15 @@ const Minesweeper = () => {
         // 阻止中键点击时触发的默认右键菜单（某些浏览器/插件行为）
         const preventDefault = (e) => e.preventDefault();
         const gridEl = gridRef.current;
-        if(gridEl) {
-          gridEl.addEventListener('auxclick', preventDefault);
+        if (gridEl) {
+            gridEl.addEventListener('auxclick', preventDefault);
         }
         return () => {
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
-            if(gridEl) {
-              gridEl.removeEventListener('auxclick', preventDefault);
+            if (gridEl) {
+                gridEl.removeEventListener('auxclick', preventDefault);
             }
         };
     }, [updateTransform]);
@@ -363,13 +363,13 @@ const Minesweeper = () => {
                 {/* --- 修改: 更新UI提示 --- */}
                 <div className="controls-info">中键拖拽 | 滚轮缩放 | R键重置</div>
             </div>
-            
+
             {gameState === 'GAME_OVER' && (
-                    <div className="game-over-message">
-                        <h2>游戏结束!</h2>
-                        <button onClick={restartGame}>重新开始</button>
-                    </div>
-                )}
+                <div className="game-over-message">
+                    <h2>游戏结束!</h2>
+                    <button onClick={restartGame}>重新开始</button>
+                </div>
+            )}
             <div
                 className="grid-container"
                 onMouseDown={handleMouseDown}
@@ -382,6 +382,11 @@ const Minesweeper = () => {
                     {renderCells()}
                 </div>
             </div>
+            <footer className="page-footer">
+                <p>
+                    Created by <a href="https://github.com/Rain-Kotsuzui" target="_blank" rel="noopener noreferrer">SuShirui</a>
+                </p>
+            </footer>
         </div>
     );
 };
