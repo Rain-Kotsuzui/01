@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Test HTML Document</title>
+</head>
+
+<body>
+    <div id="clickTest"> clickTest</div>
+    <script>
+        document.getElementById("clickTest").addEventListener("click", function() {
+            alert("Element clicked!");
+        });
+        document.body.addEventListener("body:click", function() {
+            alert("Body clicked!");
+        });
+    </script>
+</body>
+
+</html>

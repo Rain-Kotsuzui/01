@@ -1,0 +1,295 @@
+/* src/components/Minesweeper.css */
+
+/* --- 1. 全局和主题变量 --- */
+:root {
+    /* 颜色主题 */
+    --color-background: #2c3e50;
+    /* 深邃的蓝灰色背景 */
+    --color-cell-hidden: #34495e;
+    /* 未揭开的格子颜色 */
+    --color-cell-revealed: #2c3e50;
+    /* 揭开后的格子颜色，与背景相同，形成“挖空”效果 */
+    --color-cell-hover: #4a6179;
+    /* 鼠标悬停时的格子颜色 */
+    --color-text: #ecf0f1;
+    /* 主要文字颜色 (近白) */
+    --color-mine-bg: #e74c3c;
+    /* 踩到雷的背景色 */
+    --color-flag: #e74c3c;
+    /* 旗帜颜色 */
+
+    /* 尺寸和动画 */
+    --cell-border-radius: 5px;
+    --ui-border-radius: 12px;
+    --transition-speed: 0.2s;
+}
+
+body,
+html,
+#root,
+.App {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    /* 使用现代系统字体，获得最佳原生体验 */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* --- 2. 游戏网格和容器 --- */
+.game-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.grid-container {
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    overflow: hidden;
+    position: relative;
+    background-color: var(--color-background);
+}
+
+.grid-container:active {
+    cursor: grabbing;
+}
+
+.grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+    will-change: transform;
+}
+
+/* --- 3. 单元格样式 (核心变化) --- */
+.cell-wrapper {
+    box-sizing: border-box;
+    padding: 2px;
+    /* 给格子之间创造间隙 */
+}
+
+.cell {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    background-color: var(--color-cell-hidden);
+    border-radius: var(--cell-border-radius);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 20px;
+    user-select: none;
+    /* 核心：为所有变化添加平滑过渡 */
+    transition: background-color var(--transition-speed) ease,
+        transform var(--transition-speed) ease,
+        box-shadow var(--transition-speed) ease;
+}
+
+/* 鼠标悬停在未揭开的格子上 */
+.cell:not(.revealed):not(.flagged):hover {
+    background-color: var(--color-cell-hover);
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(236, 240, 241, 0.1);
+}
+
+.cell.revealed {
+    background-color: var(--color-cell-revealed);
+    box-shadow: none;
+    transform: scale(0.95);
+    /* 揭开时有轻微内缩效果 */
+}
+
+.cell.mine {
+    background-color: var(--color-mine-bg);
+    animation: pulse 1s infinite;
+    /* 踩到雷时有脉冲动画 */
+}
+
+/* 使用 Emoji 作为旗帜和地雷，更直观 */
+.cell.flagged::before {
+    content: '🚩';
+    font-size: 16px;
+    color: var(--color-flag);
+}
+
+.cell.mine.revealed::before {
+    content: '💥';
+    font-size: 20px;
+}
+
+/* 脉冲动画 */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(231, 76, 60, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+    }
+}
+
+/* --- 4. 数字颜色 (保持经典，但更鲜艳) --- */
+.number-1 {
+    color: #3498db;
+}
+
+/* 蓝色 */
+.number-2 {
+    color: #2ecc71;
+}
+
+/* 绿色 */
+.number-3 {
+    color: #e74c3c;
+}
+
+/* 红色 */
+.number-4 {
+    color: #9b59b6;
+}
+
+/* 紫色 */
+.number-5 {
+    color: #f1c40f;
+}
+
+/* 黄色 */
+.number-6 {
+    color: #1abc9c;
+}
+
+/* 蓝绿色 */
+.number-7 {
+    color: #e67e22;
+}
+
+/* 橙色 */
+.number-8 {
+    color: #95a5a6;
+}
+
+/* 灰色 */
+
+/* --- 5. UI 覆盖层 --- */
+.ui-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    background: rgba(44, 62, 80, 0.7);
+    /* 半透明背景 */
+    backdrop-filter: blur(10px);
+    /* 磨砂玻璃效果 */
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(236, 240, 241, 0.1);
+    pointer-events: all;
+    /* 整个顶栏都可以交互 */
+}
+
+.ui-overlay h1,
+.ui-overlay .score,
+.ui-overlay .controls-info {
+    margin: 0;
+    padding: 0;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.ui-overlay h1 {
+    font-size: 1.5em;
+}
+
+.ui-overlay .score {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.ui-overlay .controls-info {
+    font-size: 0.9em;
+    color: #bdc3c7;
+    /* 稍暗的提示文字 */
+}
+
+
+/* --- 6. 游戏结束弹窗 --- */
+.game-over-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+.game-over-message div {
+    background: var(--color-cell-hidden);
+    padding: 30px 50px;
+    border-radius: var(--ui-border-radius);
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    transform: scale(0.8);
+    animation: popIn 0.3s 0.1s ease forwards;
+}
+
+@keyframes popIn {
+    to {
+        transform: scale(1);
+    }
+}
+
+.game-over-message h2 {
+
+    margin-bottom: 8px;
+    margin: 0 0 20px 0;
+    font-size: 2em;
+    color: var(--color-text);
+}
+
+.game-over-message button {
+    display: block;
+
+    padding: 12px 25px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    background-color: #3498db;
+    color: white;
+    transition: background-color var(--transition-speed), transform var(--transition-speed);
+}
+
+.game-over-message button:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+}

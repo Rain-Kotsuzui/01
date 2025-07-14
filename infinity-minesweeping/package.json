@@ -1,5 +1,5 @@
 {
-  "name": "poet-snake",
+  "name": "infinity-minesweeping",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,12 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "start": "vite"
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "seedrandom": "^3.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
