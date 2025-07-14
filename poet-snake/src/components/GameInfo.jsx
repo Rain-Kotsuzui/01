@@ -12,6 +12,7 @@ function GameInfo({ apiKey, onApiKeyChange, collectedChars }) {
           value={apiKey}
           onChange={onApiKeyChange}
         />
+        
       </div>
       <div className="collected-chars-section">
         <h3>已拾得的汉字：</h3>
