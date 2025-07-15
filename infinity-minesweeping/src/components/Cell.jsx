@@ -3,11 +3,11 @@ import React from 'react';
 
 const Cell = ({ data, onClick, onContextMenu }) => {
   const renderContent = () => {
-    if (data.state === 'FLAGGED') return '🚩';
+    if (data.state === 'FLAGGED') return '';
     if (data.state === 'HIDDEN') return '';
 
     // state is REVEALED
-    if (data.isMine) return '💣';
+    if (data.isMine) return '';
     if (data.adjacentMines > 0) {
       return data.adjacentMines;
     }
