@@ -5,11 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "chrome",
+            "name": "运行主程序",
+            "type": "python",
             "request": "launch",
-            "name": "针对 localhost 启动 Chrome",
-            "url": "http://localhost:8080",
-            "webRoot": "${workspaceFolder}"
+            "program": "${workspaceFolder}/QKV/main.py",  // 指向主文
         }
     ]
 }

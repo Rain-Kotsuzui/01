@@ -4,7 +4,7 @@
 // 你可以 npm install seedrandom
 import seedrandom from 'seedrandom';
 
-const MINE_DENSITY = 0.16; // 16% 的雷密度
+const MINE_DENSITY = 0.1; // 16% 的雷密度
 
 // 生成一个基于坐标和种子的确定性哈希值
 function getCoordSeed(x, y, seed) {
