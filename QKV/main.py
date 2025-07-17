@@ -47,7 +47,6 @@ def test2():
     print("\n每行的权重和 (应接近1):", np.sum(weights_with_mask[0], axis=-1))
     pass
 
-
 if __name__ == "__main__":
     test1()
     test2()

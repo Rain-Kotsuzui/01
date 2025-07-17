@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RenderFormer: 为内容创作而生的神经渲染新范式 - 开题报告</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Noto+Sans+SC:wght@300;400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --bg-light: #F9F9F9;
+            --bg-card-dark: #1A1A1A;
+            --text-dark: #121212;
+            --text-light: #FFFFFF;
+            --text-secondary-dark: #A0A0A0;
+            --text-secondary-light: #666666;
+            --accent-gradient: linear-gradient(135deg, #FF1B6B 0%, #FF4D00 100%);
+            --accent-red-start: #FF1B6B;
+            --border-color-dark: #333333;
+            --border-color-light: #EAEAEA;
+            --font-heading: 'Inter', 'Noto Sans SC', sans-serif;
+            --font-body: 'Noto Sans SC', 'Inter', sans-serif;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            font-family: var(--font-body);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* --- 新增：动态网格背景 --- */
+        #grid-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .ppt-container {
+            width: 90vw;
+            max-width: 1280px;
+            aspect-ratio: 16 / 9;
+            position: relative;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 6% 8%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.6s ease-out, visibility 0.6s;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        h1,
+        h2,
+        h3,
+        p,
+        li,
+        div {
+            margin: 0;
+            padding: 0;
+            position: relative;
+        }
+
+        .gradient-text {
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* --- 主题 --- */
+        .slide.theme-dark {
+            background: var(--bg-dark);
+            color: var(--text-light);
+        }
+
+        .slide.theme-light {
+            background: var(--bg-light);
+            color: var(--text-dark);
+        }
+
+        .slide.theme-gradient {
+            background: var(--accent-gradient);
+            color: var(--text-dark);
+        }
+
+        /* ====== 动画库 ====== */
+        @keyframes revealMask {
+            from {
+                clip-path: inset(0 100% 0 0);
+            }
+
+            to {
+                clip-path: inset(0 0 0 0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes cardFlyIn {
+            from {
+                opacity: 0;
+                transform: perspective(1000px) rotateY(-20deg) translateX(-40px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: perspective(1000px) rotateY(0) translateX(0) scale(1);
+            }
+        }
+
+        @keyframes drawPath {
+            from {
+                stroke-dashoffset: 1000;
+            }
+
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .slide.active .anim-reveal {
+            animation: revealMask 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        .slide.active .anim-fade {
+            opacity: 0;
+            animation: fadeIn 1s ease-out forwards;
+        }
+
+        .slide.active .anim-slide-up {
+            opacity: 0;
+            animation: slideInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        /* ====== 幻灯片特定样式 ====== */
+
+        /* --- 修改：Slide 1 封面样式 --- */
+        #slide1 {
+            justify-content: center;
+            text-align: left;
+        }
+
+        #slide1 .title-block {
+            position: relative;
+            display: inline-block;
+            padding: 1.5rem 2rem;
+        }
+
+        #slide1 .title-block::before {
+            content: '';
+            position: absolute;
+            top: -2vh;
+            left: -2vw;
+            width: 110%;
+            height: 120%;
+            background: var(--accent-gradient);
+            z-index: -1;
+            transform: skew(-15deg);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+
+
+        #slide1 h1 {
+            font-size: 4.5vw;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+
+        #slide1 h2 {
+            font-size: 1.8vw;
+            color: var(--text-secondary-dark);
+            margin-top: 1rem;
+        }
+
+        /* Slide 2 & 3: 背景与问题 */
+        .slide-intro {
+            justify-content: center;
+            text-align: center;
+        }
+
+        .slide-intro h1 {
+            font-size: 3.5vw;
+            font-weight: 900;
+        }
+
+        .slide-intro .subtitle {
+            font-size: 1.5vw;
+            margin-top: 1rem;
+        }
+
+        .theme-light .slide-intro .subtitle {
+            color: var(--text-secondary-light);
+        }
+
+        .slide-intro .highlight {
+            color: var(--accent-red-start);
+        }
+
+        /* Slide 4-5, 8-10: 标准内容页 */
+        .slide-standard {
+            justify-content: center;
+        }
+
+        .slide-standard h1 {
+            font-size: 3vw;
+            font-weight: 900;
+            margin-bottom: 3rem;
+        }
+
+        .slide-standard ul {
+            list-style: none;
+            font-size: 1.5vw;
+        }
+
+        .slide-standard li {
+            margin-bottom: 1.8rem;
+            line-height: 1.7;
+            display: flex;
+        }
+
+        .slide-standard li::before {
+            content: '▪';
+            margin-right: 1.5rem;
+            color: var(--accent-red-start);
+        }
+
+        .theme-light .slide-standard li {
+            color: var(--text-secondary-light);
+        }
+
+        /* Slide 6: 本质区别 */
+        #slide6 {
+            justify-content: center;
+        }
+
+        #slide6 h1 {
+            text-align: center;
+            margin-bottom: 3rem;
+            font-size: 3vw;
+        }
+
+        #slide6 .comparison {
+            display: grid;
+            grid-template-columns: 1fr 0.2fr 1fr;
+            width: 100%;
+            align-items: flex-start;
+            text-align: center;
+        }
+
+        #slide6 h2 {
+            font-size: 2.2vw;
+            margin-bottom: 2rem;
+            font-weight: 700;
+        }
+
+        #slide6 .vs {
+            font-size: 5vw;
+            font-weight: 900;
+            align-self: center;
+        }
+
+        #slide6 p {
+            font-size: 1.4vw;
+            line-height: 1.7;
+        }
+
+        .theme-light #slide6 p {
+            color: var(--text-secondary-light);
+        }
+
+        /* Slide 7: 原生优势 (工作流) */
+        #slide7 {
+            justify-content: center;
+        }
+
+        #slide7 h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 3vw;
+        }
+
+        #slide7 .workflow-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+        }
+
+        #slide7 .workflow {
+            text-align: center;
+        }
+
+        #slide7 .workflow h3 {
+            font-size: 1.5vw;
+            margin-bottom: 1rem;
+        }
+
+        #slide7 .workflow-box {
+            background: var(--bg-card-dark);
+            border: 1px solid var(--border-color-dark);
+            color: var(--text-light);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+        }
+
+        #slide7 .workflow-arrow {
+            stroke: var(--text-secondary-dark);
+            stroke-width: 2;
+            stroke-dasharray: 1000;
+        }
+
+        .slide.active #slide7 .workflow-arrow {
+            animation: drawPath 1.5s 1s ease-in-out forwards;
+        }
+
+        /* Slide 8: 研究意义 (大色块) */
+        #slide8 h1 {
+            font-size: 4vw;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        /* Slide 11: 时间线 */
+        #slide11 {
+            justify-content: center;
+        }
+
+        #slide11 h1 {
+            font-size: 3vw;
+            margin-bottom: 2rem;
+        }
+
+        #slide11 .timeline-container {
+            display: flex;
+            width: 100%;
+            padding-top: 2rem;
+        }
+
+        #slide11 .timeline-line {
+            position: relative;
+            width: 4px;
+            background: var(--border-color-light);
+        }
+
+        #slide11 .timeline-progress {
+            position: absolute;
+            width: 100%;
+            background: var(--accent-gradient);
+            height: 0;
+        }
+
+        #slide11 .timeline-items {
+            padding-left: 3rem;
+        }
+
+        #slide11 .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        #slide11 .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -3.7rem;
+            top: 0.5rem;
+            width: 14px;
+            height: 14px;
+            background: var(--bg-light);
+            border: 3px solid var(--accent-red-start);
+            border-radius: 50%;
+        }
+
+        #slide11 h3 {
+            font-size: 1.5vw;
+        }
+
+        #slide11 p {
+            font-size: 1.2vw;
+            color: var(--text-secondary-light);
+        }
+
+        /* Slide 12: Q&A */
+        #slide12 h1 {
+            font-size: 8vw;
+            font-weight: 900;
+        }
+
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: 1px solid #444;
+            color: #888;
+            width: 45px;
+            height: 45px;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 50%;
+            z-index: 1000;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            opacity: 1;
+        }
+
+        .theme-dark .nav-btn:hover {
+            border-color: var(--text-light);
+            color: var(--text-light);
+        }
+
+        .theme-light .nav-btn {
+            border-color: #CCC;
+            color: #888;
+        }
+
+        .theme-light .nav-btn:hover {
+            border-color: var(--text-dark);
+            color: var(--text-dark);
+        }
+
+        .theme-gradient .nav-btn {
+            border-color: rgba(0, 0, 0, 0.3);
+            color: var(--text-dark);
+        }
+
+        .page-number {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            font-size: 16px;
+            z-index: 1000;
+        }
+
+        .theme-dark .page-number {
+            color: var(--text-secondary-dark);
+        }
+
+        .theme-light .page-number {
+            color: var(--text-secondary-light);
+        }
+
+        .theme-gradient .page-number {
+            color: rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 新增：动态网格背景的画布 -->
+    <canvas id="grid-canvas"></canvas>
+
+    <div class="ppt-container">
+        <!-- Slides will be injected here -->
+    </div>
+
+    <script>
+        // --- 新增：动态网格背景脚本 ---
+        const canvas = document.getElementById('grid-canvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            let width, height, gridSize, offsetX, offsetY;
+            function setupGrid() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+                gridSize = 40;
+                offsetX = 0;
+                offsetY = 0;
+            }
+            function drawGrid() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+                // 使用与主题匹配的颜色
+                ctx.strokeStyle = 'rgba(255, 27, 107, 0.15)';
+                ctx.lineWidth = 1;
+                for (let x = -gridSize + (offsetX % gridSize); x < width; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.stroke();
+                }
+                for (let y = -gridSize + (offsetY % gridSize); y < height; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+                offsetX += 0.2;
+                offsetY += 0.2;
+                requestAnimationFrame(drawGrid);
+            }
+            window.addEventListener('resize', setupGrid);
+            setupGrid();
+            drawGrid();
+        }
+
+        const slideContent = [
+            // 修改：Slide 1 (应用了新的设计)
+            `<div class="slide theme-dark" id="slide1">
+                <div class="title-block">
+                    <h1 class="anim-reveal" style="animation-delay: 0.2s;">RenderFormer: 为内容创作而生</h1>
+                    <h2 class="anim-reveal" style="animation-delay: 0.5s;">一种可学习的通用神经渲染器</h2>
+                </div>
+            </div>`,
+            // Slide 2
+            `<div class="slide theme-light slide-intro" id="slide2">
+                <h1 class="anim-fade" style="animation-delay: 0.2s;">研究背景：场景重建的革命</h1>
+                <p class="subtitle anim-fade" style="animation-delay: 0.6s;"><strong class="gradient-text">NeRF</strong> 与 <strong class="gradient-text">高斯溅射</strong> 实现了对现实世界无与伦比的数字复刻。</p>
+            </div>`,
+            // Slide 3
+            `<div class="slide theme-light slide-intro" id="slide3">
+                 <h1 class="anim-fade" style="animation-delay: 0.2s;">但，创作者有一个<span class="highlight">根本性</span>的需求...</h1>
+                 <p class="subtitle anim-fade" style="animation-delay: 0.6s;">他们不仅想重建现实，更想从零开始<strong class="highlight">创造虚拟</strong>。他们需要的是一个<strong class="highlight">渲染器</strong>，而非重建器。</p>
+            </div>`,
+            // Slide 4
+            `<div class="slide theme-dark slide-standard" id="slide4">
+                <div class="anim-slide-up" style="animation-delay: 0.2s;">
+                    <h1 class="gradient-text">我们的方案：RenderFormer</h1>
+                    <ul>
+                        <li>它不是学习一个“场景”，而是学习“渲染”这件事本身。</li>
+                        <li>它是一个通用的、一次训练、可渲染任意场景的神经网络。</li>
+                    </ul>
+                </div>
+            </div>`,
+            // Slide 5
+            `<div class="slide theme-light slide-standard" id="slide5">
+                <h1 class="anim-slide-up" style="animation-delay: 0.2s;">核心创新：序列到序列的渲染</h1>
+                <ul>
+                    <li class="anim-slide-up" style="animation-delay: 0.5s;">将渲染重塑为一种“翻译”任务：输入是代表几何的<strong class="gradient-text">三角形序列</strong>。</li>
+                    <li class="anim-slide-up" style="animation-delay: 0.7s;">利用Transformer模型，直接“翻译”为代表图像的<strong class="gradient-text">像素序列</strong>。</li>
+                    <li class="anim-slide-up" style="animation-delay: 0.9s;">这是一种学习物理过程的全新范式，而非模拟物理本身。</li>
+                </ul>
+            </div>`,
+            // Slide 6
+            `<div class="slide theme-dark" id="slide6">
+                <h1 class="anim-fade" style="animation-delay: 0.2s; text-align:center; width: 100%; margin-bottom: 3rem;">本质区别</h1>
+                <div class="comparison">
+                    <div class="anim-slide-up" style="animation-delay: 0.5s;">
+                        <h2>NeRF / 高斯溅射</h2>
+                        <p><strong>场景重建器</strong><br>输入：多张图片<br>输出：一个特定场景的3D表示</p>
+                    </div>
+                    <div class="vs gradient-text anim-fade" style="animation-delay: 0.8s;">VS</div>
+                    <div class="anim-slide-up" style="animation-delay: 0.5s;">
+                        <h2>RenderFormer</h2>
+                        <p><strong>通用渲染器</strong><br>输入：任意3D模型 (网格)<br>输出：该模型的渲染图像</p>
+                    </div>
+                </div>
+            </div>`,
+            // Slide 7
+            `<div class="slide theme-dark" id="slide7">
+                <h1 class="anim-fade" style="animation-delay: 0.2s;">对游戏/CG领域的原生优势</h1>
+                <div class="workflow-container">
+                    <div class="workflow anim-slide-up" style="animation-delay: 0.5s;">
+                        <h3>传统工作流 (CG/游戏)</h3>
+                        <div class="workflow-box">3D建模 (Mesh)</div>
+                        <svg height="40" width="100%"><line class="workflow-arrow" x1="50%" y1="0" x2="50%" y2="40"/></svg>
+                        <div class="workflow-box">渲染引擎</div>
+                    </div>
+                    <div class="workflow anim-slide-up" style="animation-delay: 0.7s;">
+                        <h3>RenderFormer</h3>
+                        <div class="workflow-box">3D建模 (Mesh)</div>
+                        <svg height="40" width="100%"><line class="workflow-arrow" x1="50%" y1="0" x2="50%" y2="40"/></svg>
+                        <div class="workflow-box" style="border-color: var(--accent-red-start);">RenderFormer</div>
+                    </div>
+                </div>
+                <p class="anim-fade" style="animation-delay: 1.5s; text-align: center; margin-top: 2rem; color: var(--text-secondary-dark);">RenderFormer无缝接入现有创作管线，而NeRF/GS则需要完全不同的、基于图像捕获的工作流。</p>
+            </div>`,
+            // Slide 8
+            `<div class="slide theme-gradient" id="slide8" style="justify-content:center; align-items:center;">
+                <h1 class="anim-fade" style="animation-delay: 0.2s;">研究意义：<br>降低算力门槛，实现创作民主化</h1>
+            </div>`,
+            // Slide 9
+            `<div class="slide theme-light slide-standard" id="slide9">
+                <h1 class="anim-slide-up" style="animation-delay: 0.2s;">可以进行的改进</h1>
+                <ul>
+                    <li class="anim-slide-up" style="animation-delay: 0.5s;"><strong>材质多样性：</strong> 扩展训练集，使其支持玻璃、水、次表面散射等更复杂的BRDF模型。</li>
+                    <li class="anim-slide-up" style="animation-delay: 0.7s;"><strong>层次化注意力：</strong> 引入基于BVH等空间结构的分层注意力机制，以支持更大规模的三角网格。</li>
+                    <li class="anim-slide-up" style="animation-delay: 0.9s;"><strong>可控性增强：</strong> 探索如何让艺术家能直观地控制光照、相机等渲染参数。</li>
+                </ul>
+            </div>`,
+            // Slide 10
+            `<div class="slide theme-light slide-standard" id="slide10">
+                <h1 class="anim-slide-up" style="animation-delay: 0.2s;">未来的方向</h1>
+                <ul>
+                    <li class="anim-slide-up" style="animation-delay: 0.5s;"><strong>动态场景渲染：</strong> 将序列翻译模型扩展到时间维度，以渲染动画序列。</li>
+                    <li class="anim-slide-up" style="animation-delay: 0.7s;"><strong>逆向渲染应用：</strong> 利用其可微特性，从单张图像反推材质、光照等场景属性。</li>
+                    <li class="anim-slide-up" style="animation-delay: 0.9s;"><strong>渲染“基础模型”：</strong> 训练一个能理解所有渲染任务的超大规模模型。</li>
+                </ul>
+            </div>`,
+            // Slide 11
+            `<div class="slide theme-dark" id="slide11">
+                 <h1 class="anim-fade" style="animation-delay: 0.2s;">研究计划</h1>
+                 <div class="timeline-container">
+                    <div class="timeline-line"><div class="timeline-progress"></div></div>
+                    <div class="timeline-items">
+                        <div class="timeline-item"><h3>阶段一：文献调研与架构设计</h3><p>深入分析Transformer在图形学中的应用。</p></div>
+                        <div class="timeline-item"><h3>阶段二：模型实现与训练</h3><p>构建并训练RenderFormer核心模型。</p></div>
+                        <div class="timeline-item"><h3>阶段三：性能评估与对比</h3><p>与NeRF、光线追踪等方法进行全方位对比。</p></div>
+                        <div class="timeline-item"><h3>阶段四：论文撰写与成果发表</h3><p>总结研究成果，撰写高水平学术论文。</p></div>
+                    </div>
+                 </div>
+            </div>`,
+            // Slide 12
+            `<div class="slide theme-gradient" id="slide12" style="justify-content: center; align-items: center;">
+                <h1 class="anim-fade" style="animation-delay: 0.2s;">Q & A</h1>
+            </div>`
+        ];
+
+        const container = document.querySelector('.ppt-container');
+        container.innerHTML = slideContent.join('') + `
+            <button id="prev" class="nav-btn">‹</button>
+            <button id="next" class="nav-btn">›</button>
+            <div class="page-number" id="page-counter"></div>
+        `;
+
+        const slides = document.querySelectorAll('.slide');
+        const prevBtn = document.getElementById('prev');
+        const nextBtn = document.getElementById('next');
+        const pageCounter = document.getElementById('page-counter');
+        let currentSlide = 0;
+        const totalSlides = slides.length;
+
+        function showSlide(index) {
+            slides.forEach((slide) => {
+                slide.classList.remove('active');
+            });
+            const newSlide = slides[index];
+            newSlide.classList.add('active');
+
+            pageCounter.textContent = `${index + 1} / ${totalSlides}`;
+            prevBtn.style.display = (index === 0) ? 'none' : 'block';
+            nextBtn.style.display = (index === totalSlides - 1) ? 'none' : 'block';
+
+            // 动态为时间线添加动画
+            const timelineProgress = newSlide.querySelector('.timeline-progress');
+            if (timelineProgress) {
+                timelineProgress.style.animation = 'none';
+                void timelineProgress.offsetWidth; // 触发重绘
+                timelineProgress.style.animation = `drawTimeline 1.5s 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards`;
+            }
+            newSlide.querySelectorAll('.timeline-item').forEach((item, i) => {
+                item.style.opacity = '0';
+                item.style.animation = `popIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards ${0.8 + i * 0.3}s`;
+            });
+        }
+
+        function nextSlide() { if (currentSlide < totalSlides - 1) { currentSlide++; showSlide(currentSlide); } }
+        function prevSlide() { if (currentSlide > 0) { currentSlide--; showSlide(currentSlide); } }
+
+        prevBtn.addEventListener('click', prevSlide);
+        nextBtn.addEventListener('click', nextSlide);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'PageDown') { nextSlide(); }
+            else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { prevSlide(); }
+        });
+
+        // 初始化
+        showSlide(currentSlide);
+    </script>
+</body>
+
+</html>

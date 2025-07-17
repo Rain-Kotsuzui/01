@@ -8,7 +8,7 @@
             "name": "运行主程序",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/QKV/main.py",  // 指向主文
+            "program": "${file}",  // 指向主文
         }
     ]
 }
